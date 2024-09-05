@@ -1,4 +1,7 @@
+*.log
+*.pot
 *.pyc
-/mdia/
-/static/
-general.log
+__pycache__
+db.sqlite3
+/media/
+staticfiles
