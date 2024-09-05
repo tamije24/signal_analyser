@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.db.models.aggregates import Count
 from . import models
-from datetime import datetime, timedelta 
 
 @admin.register(models.Project)
 class ProjectAdmin(admin.ModelAdmin):

@@ -1,8 +1,5 @@
 from django.conf import settings
-from django.shortcuts import render, get_object_or_404
-from django.db.models import Q, F
 from django.db.models.aggregates import Count
-# from django.http import HttpResponse
 import numpy as np
 import json
 # import logging
