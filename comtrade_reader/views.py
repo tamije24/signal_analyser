@@ -2,11 +2,12 @@ from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q, F
 from django.db.models.aggregates import Count
-from django.http import HttpResponse
+# from django.http import HttpResponse
 import numpy as np
 import json
+# import logging
 
-from rest_framework.filters import SearchFilter, OrderingFilter
+# from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import AllowAny, DjangoModelPermissions, DjangoModelPermissionsOrAnonReadOnly, IsAdminUser, IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -19,6 +20,8 @@ from .serializers import ProjectSerializer, CreateProjectWithFilesSerializer, Fi
 from utilities.handle_comtrade import ReadComtrade
 from utilities.dft_phasors import DFTPhasors
 from utilities.sequence import Sequence
+
+# logger = logging.getLogger(__name__)
 
 # This viewset is for viewing and adding projects and related files at one go
 class ProjectAndFilesViewSet(ModelViewSet):

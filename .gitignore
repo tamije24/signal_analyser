@@ -1,3 +1,4 @@
 *.pyc
 /mdia/
 /static/
+general.log
