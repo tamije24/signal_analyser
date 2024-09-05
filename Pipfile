@@ -15,6 +15,7 @@ numpy = "*"
 django-cors-headers = "*"
 matplotlib = "*"
 whitenoise = "*"
+gunicorn = "*"
 
 [dev-packages]
 
