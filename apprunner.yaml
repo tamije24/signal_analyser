@@ -9,3 +9,8 @@ run:
   command: sh startup.sh
   network:
     port: 8000
+  env:
+    - name: DJANGO_SETTINGS_MODULE
+      value: signal_analyser.settings.prod
+    - name: SECRET_KEY
+      value: ")r@b*epfp9z!8fg!#26pdxb)r90)0_j_9f81w0_sr9%tnjg-5y"
