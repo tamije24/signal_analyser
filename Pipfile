@@ -13,9 +13,9 @@ djoser = "*"
 djangorestframework-simplejwt = "*"
 numpy = "*"
 django-cors-headers = "*"
-matplotlib = "*"
 whitenoise = "*"
 gunicorn = "*"
+dj-database-url = "*"
 
 [dev-packages]
 
