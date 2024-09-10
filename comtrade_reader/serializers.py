@@ -31,6 +31,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
             # SAVE FILES
             cfg_file = str(validated_data['cfg_file'])
             dat_file = str(validated_data['dat_file'])
+            print(cfg_file)
             file = File(**validated_data)
             file.project_id = self.context['project_id']
             file.save()
