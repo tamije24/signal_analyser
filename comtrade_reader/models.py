@@ -50,6 +50,17 @@ class File(models.Model):
     trigger_time_stamp = models.DateTimeField(null=True)
     line_frequency = models.PositiveSmallIntegerField(null=True)
     sampling_frequency = models.PositiveSmallIntegerField(null=True)
+    ia_channel = models.CharField(max_length=20,null=False, default="")
+    ib_channel = models.CharField(max_length=20,null=False, default="")
+    ic_channel = models.CharField(max_length=20,null=False, default="")
+    va_channel = models.CharField(max_length=20,null=False, default="")
+    vb_channel = models.CharField(max_length=20,null=False, default="")
+    vc_channel = models.CharField(max_length=20,null=False, default="")
+    d1_channel = models.CharField(max_length=20,null=False, default="")
+    d2_channel = models.CharField(max_length=20,null=False, default="")
+    d3_channel = models.CharField(max_length=20,null=False, default="")
+    d4_channel = models.CharField(max_length=20,null=False, default="")
+    
     
     class Meta:
         indexes = [
@@ -67,7 +78,7 @@ class AnalogChannel(models.Model):
     primary = models.PositiveSmallIntegerField()
     secondary = models.PositiveSmallIntegerField()
     pors = models.CharField(max_length=1)
-    selected = models.BooleanField(default=False)
+    selected = models.BooleanField(default=False)  #TODO this field must be removed
     
 class DigitalChannel(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='digital_channels')     
@@ -75,8 +86,25 @@ class DigitalChannel(models.Model):
     id = models.IntegerField()
     channel_name = models.CharField(max_length=50, default="")
     normal_state = models.PositiveSmallIntegerField()
-    selected = models.BooleanField(default=False)
+    selected = models.BooleanField(default=False) #TODO this field must be removed
     
-
+class AnalogSignal(models.Model):
+    sample_id = models.CharField(max_length=30, primary_key=True)
+    file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='analog_signals')  
+    time_signal = models.DecimalField(max_digits=8, decimal_places=6)
+    ia_signal = models.FloatField()
+    ib_signal = models.FloatField()
+    ic_signal = models.FloatField()
+    va_signal = models.FloatField()
+    vb_signal = models.FloatField()
+    vc_signal = models.FloatField()
     
+class DigitalSignal(models.Model):
+    sample_id = models.CharField(max_length=30, primary_key=True)
+    file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='digital_signals')  
+    time_signal = models.DecimalField(max_digits=8, decimal_places=6)
+    d1_signal = models.PositiveSmallIntegerField()
+    d2_signal = models.PositiveSmallIntegerField()
+    d3_signal = models.PositiveSmallIntegerField()
+    d4_signal = models.PositiveSmallIntegerField()
    

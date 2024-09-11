@@ -11,8 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Project, File, AnalogChannel, DigitalChannel
-from .serializers import ProjectSerializer, CreateProjectWithFilesSerializer, FileSerializer, CreateFileSerializer, AnalogChannelSerializer, DigitalChannelSerializer, ProjectUpdateSerialiser
+from .models import AnalogSignal, DigitalSignal, Project, File, AnalogChannel, DigitalChannel
+from .serializers import DigitalSignalSerializer, ProjectSerializer, CreateProjectWithFilesSerializer, FileSerializer, CreateFileSerializer, AnalogChannelSerializer, DigitalChannelSerializer, ProjectUpdateSerialiser, AnalogSignalSerializer
 
 from utilities.handle_comtrade import ReadComtrade
 from utilities.dft_phasors import DFTPhasors
@@ -135,115 +135,69 @@ class DigitalChannelViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'file_id': self.kwargs['file_pk']}
      
-class AnalogSignalView(APIView):
-    http_method_names = ['get', 'head', 'options']
-    # renderer_classes = [JSONRenderer]
+class AnalogSignalViewSet(ModelViewSet):
     
-    def get(self, request, id):    
-        
-        analog_channel_list = list(AnalogChannel.objects.filter(file_id=id, selected=True))          
-        selectedChannels = [anChannel.id for anChannel in analog_channel_list]
-        
-        file_list = list(File.objects.filter(file_id=id))    
-        file = file_list[0]
-        
-        cfg_file = settings.MEDIA_ROOT + "/" + str(file.cfg_file)
-        dat_file = settings.MEDIA_ROOT + "/" + str(file.dat_file)
-        comtrade = ReadComtrade(cfg_file=cfg_file, dat_file=dat_file)
-        [total_samples, time_signal, an_signals] = comtrade.read_comtrade_analog_signals()
-        
-        signals = []
-        for i in range(total_samples):
-            signal = {"time": time_signal[i]}
-            for j in range(len(selectedChannels)):
-                ch_name = [an_channel.channel_name for an_channel in analog_channel_list if an_channel.id == selectedChannels[j]][0] 
-                signal[ch_name] = an_signals[j][i]
-         
-            signals.append(signal)
-            
-        analog_signals = {"signals": signals}
-        # print(analog_signals)    
-        return Response(json.dumps(analog_signals))
-        # return Response(analog_signals)
-        
-class DigitalSignalView(APIView):
     http_method_names = ['get', 'head', 'options']
-    # renderer_classes = [JSONRenderer]
+    serializer_class = AnalogSignalSerializer
     
-    def get(self, request, id):    
-        
-        digital_channel_list = list(DigitalChannel.objects.filter(file_id=id, selected=True))          
-        selectedChannels = [digChannel.id for digChannel in digital_channel_list]
-        
-        file_list = list(File.objects.filter(file_id=id))    
-        file = file_list[0]
-        
-        cfg_file = settings.MEDIA_ROOT + "/" + str(file.cfg_file)
-        dat_file = settings.MEDIA_ROOT + "/" + str(file.dat_file)
-        comtrade = ReadComtrade(cfg_file=cfg_file, dat_file=dat_file)
-        [total_samples, time_signal, dig_signals] = comtrade.read_comtrade_digital_signals()
-                          
-        signals = []
-        for i in range(total_samples):
-            signal = {"time":time_signal[i]}
-            for j in range(len(selectedChannels)):
-                ch_name = [dig_channel.channel_name for dig_channel in digital_channel_list if dig_channel.id == selectedChannels[j]][0] 
-                signal[ch_name] = dig_signals[j][i]
- 
-            signals.append(signal) 
-            
-        digital_signals = {"signals": signals} 
-        return Response(json.dumps(digital_signals))
+    def get_queryset(self):
+        return AnalogSignal.objects.filter(file_id=self.kwargs['file_pk']).order_by('time_signal')
 
+class DigtialSignalViewSet(ModelViewSet):
+    
+    http_method_names = ['get', 'head', 'options']
+    serializer_class = DigitalSignalSerializer
+    
+    def get_queryset(self):
+        return DigitalSignal.objects.filter(file_id=self.kwargs['file_pk']).order_by('time_signal')
+            
 class PhasorView(APIView):
     http_method_names = ['get', 'head', 'options']
     # renderer_classes = [JSONRenderer]
     
     def get(self, request, id):    
-        analog_channel_list = list(AnalogChannel.objects.filter(file_id=id, selected=True))          
-        selectedChannels = [anChannel.id for anChannel in analog_channel_list]
-        
         file_list = list(File.objects.filter(file_id=id))    
         file = file_list[0]
         
-        cfg_file = settings.MEDIA_ROOT + "/" + str(file.cfg_file)
-        dat_file = settings.MEDIA_ROOT + "/" + str(file.dat_file)
-        comtrade = ReadComtrade(cfg_file=cfg_file, dat_file=dat_file)
-        [total_samples, time_signal, an_signals] = comtrade.read_comtrade_analog_signals()
+        analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
+        ia_signal = [item.ia_signal for item in analog_signals]
+        ib_signal = [item.ib_signal for item in analog_signals]
+        ic_signal = [item.ic_signal for item in analog_signals]
+        va_signal = [item.va_signal for item in analog_signals]
+        vb_signal = [item.vb_signal for item in analog_signals]
+        vc_signal = [item.vc_signal for item in analog_signals]
         
         phasors = []
         dftphasor = DFTPhasors(fs=file.sampling_frequency, fn=file.line_frequency)
-        for i in range(len(selectedChannels)):
-            phasors.append(
-                 dftphasor.estimate_dft_phasors(an_signals[selectedChannels[i]-1][:])
-            )
+        phasors.append(dftphasor.estimate_dft_phasors(ia_signal))
+        phasors.append(dftphasor.estimate_dft_phasors(ib_signal))
+        phasors.append(dftphasor.estimate_dft_phasors(ic_signal))
+        phasors.append(dftphasor.estimate_dft_phasors(va_signal))
+        phasors.append(dftphasor.estimate_dft_phasors(vb_signal))
+        phasors.append(dftphasor.estimate_dft_phasors(vc_signal))
         
+        total_samples = len(ia_signal)
         split_phasors = []
         for i in range(total_samples):
             split_phasor = {}
-            for j in range(len(selectedChannels)):
-                ch_name = [an_channel.channel_name for an_channel in analog_channel_list if an_channel.id == selectedChannels[j]][0] 
-                split_phasor[ch_name+"-mag"] = np.absolute(phasors[j][i])
-                split_phasor[ch_name+"-ang"] = np.angle(phasors[j][i])
+            split_phasor["ia-mag"] = np.absolute(phasors[0][i])
+            split_phasor["ia-ang"] = np.angle(phasors[0][i])
+            split_phasor["ib-mag"] = np.absolute(phasors[1][i])
+            split_phasor["ib-ang"] = np.angle(phasors[1][i])
+            split_phasor["ic-mag"] = np.absolute(phasors[2][i])
+            split_phasor["ic-ang"] = np.angle(phasors[2][i])
+            split_phasor["va-mag"] = np.absolute(phasors[0][i])
+            split_phasor["va-ang"] = np.angle(phasors[3][i])
+            split_phasor["vb-mag"] = np.absolute(phasors[0][i])
+            split_phasor["vb-ang"] = np.angle(phasors[4][i])
+            split_phasor["vc-mag"] = np.absolute(phasors[0][i])
+            split_phasor["vc-ang"] = np.angle(phasors[5][i])
          
             split_phasors.append(split_phasor)
 
-        # phasors = np.stack((np.absolute(ia_phasor), np.angle(ia_phasor),
-        #                     np.absolute(ib_phasor), np.angle(ib_phasor),
-        #                     np.absolute(ic_phasor), np.angle(ic_phasor),
-        #                     np.absolute(va_phasor), np.angle(va_phasor),
-        #                     np.absolute(vb_phasor), np.angle(vb_phasor),
-        #                     np.absolute(vc_phasor), np.angle(vc_phasor),
-        #                     np.absolute(i0_phasor), np.angle(i0_phasor),
-        #                     np.absolute(i1_phasor), np.angle(i1_phasor),
-        #                     np.absolute(i2_phasor), np.angle(i2_phasor),
-        #                     np.absolute(v0_phasor), np.angle(v0_phasor),
-        #                     np.absolute(v1_phasor), np.angle(v1_phasor),
-        #                     np.absolute(v2_phasor), np.angle(v2_phasor),), axis=1)
-        
         selected_phasors = {"phasors": split_phasors} 
         return Response(json.dumps(selected_phasors))
-
+    
 
 
 

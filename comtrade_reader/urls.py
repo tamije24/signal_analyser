@@ -4,8 +4,6 @@ from rest_framework_nested import routers
 from . import views
 
 urlpatterns = [
-    path('asignals/<int:id>/', views.AnalogSignalView.as_view()),
-    path('dsignals/<int:id>/', views.DigitalSignalView.as_view()),
     path('phasors/<int:id>/', views.PhasorView.as_view()),
 ]
 
@@ -21,6 +19,8 @@ router.register('files', views.AllFilesViewSet, basename='files')
 files_router = routers.NestedDefaultRouter(router, 'files', lookup='file')
 files_router.register('achannels', views.AnalogChannelViewSet, basename='files-achannels')
 files_router.register('dchannels', views.DigitalChannelViewSet, basename='files-dchannels')
+files_router.register('asignals', views.AnalogSignalViewSet, basename='files-asignals')
+files_router.register('dsignals', views.DigtialSignalViewSet, basename='files-dsignals')
 
 urlpatterns += router.urls + projects_router.urls + files_router.urls
 
@@ -37,6 +37,7 @@ urlpatterns += router.urls + projects_router.urls + files_router.urls
 # http://127.0.0.1:8000/comtrade_reader/files/1/achannels/1/
 # http://127.0.0.1:8000/comtrade_reader/files/1/dchannels/1/
 
-# http://127.0.0.1:8000/comtrade_reader/asignals/<file_id>/
-# http://127.0.0.1:8000/comtrade_reader/dsignals/<file_id>/
+# http://127.0.0.1:8000/comtrade_reader/files/1/asignals/
+# http://127.0.0.1:8000/comtrade_reader/files/1/dsignals/
+
 # http://127.0.0.1:8000/comtrade_reader/phasors/<file_id>/
