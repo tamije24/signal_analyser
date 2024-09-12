@@ -20,7 +20,7 @@ from utilities.sequence import Sequence
 
 # logger = logging.getLogger(__name__)
 
-# This viewset is for viewing and adding projects and related files at one go
+# TODO: View needs update - This viewset is for viewing and adding projects and related files at one go
 class ProjectAndFilesViewSet(ModelViewSet):
     
     http_method_names = ['get', 'post']   
@@ -54,13 +54,15 @@ class ProjectAndFilesViewSet(ModelViewSet):
 class ProjectViewSet(ModelViewSet):
     
     permission_classes = [IsAuthenticated]
-    
     # permission_classes = [DjangoModelPermissions]
     # filter_backends = [SearchFilter, OrderingFilter]
     # search_fields = ['afa_case_id', 'line_name']
     # ordering_fields = ['afa_case_id', 'line_name', 'created_on']
     
     def create(self, request, *args, **kwargs):
+        
+        #TODO: First delete all projects except the last one
+        
         serializer = ProjectSerializer(
             data=request.data,
             context={'user_id': self.request.user.id}
@@ -73,7 +75,8 @@ class ProjectViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
-            return Project.objects.select_related('user').prefetch_related('files').all()      
+            return Project.objects.select_related('user').prefetch_related('files').all().order_by('project_id')
+        # .reverse()     
         return Project.objects.select_related('user').filter(user=user.id)
 
     def get_serializer_class(self):

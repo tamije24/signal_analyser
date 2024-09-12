@@ -14,7 +14,7 @@ from utilities.handle_comtrade import ReadComtrade
 class SimpleFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ['file_id', 'cfg_file', 'dat_file', 'station_name']
+        fields = ['file_id', 'station_name', 'start_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
     
 class FileSerializer(serializers.ModelSerializer):  
     class Meta:
@@ -237,9 +237,9 @@ class DigitalChannelSerializer(serializers.ModelSerializer):
 class AnalogSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalogSignal
-        fields =['sample_id', 'time_signal', 'ia_signal', 'ib_signal', 'ic_signal', 'va_signal', 'vb_signal', 'vc_signal']
+        fields =['time_signal', 'ia_signal', 'ib_signal', 'ic_signal', 'va_signal', 'vb_signal', 'vc_signal']
         
 class DigitalSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = DigitalSignal
-        fields =['sample_id', 'time_signal', 'd1_signal', 'd2_signal', 'd3_signal', 'd4_signal']
+        fields =['time_signal', 'd1_signal', 'd2_signal', 'd3_signal', 'd4_signal']
