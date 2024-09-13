@@ -14,7 +14,7 @@ from utilities.handle_comtrade import ReadComtrade
 class SimpleFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ['file_id', 'station_name', 'start_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
+        fields = ['file_id', 'station_name', 'start_time_stamp', 'trigger_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
     
 class FileSerializer(serializers.ModelSerializer):  
     class Meta:
@@ -198,12 +198,23 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ['project_id', 'project_name', 'afa_case_id', 'line_name', 'favorite', 'no_of_terminals', 'notes', 'user', 'files']
         
     def create(self, validated_data):
-        project = Project(**validated_data)
-        project.project_name = project.line_name + " " + str(datetime.now())  
-        project.user = User.objects.get(id=self.context['user_id'])
-        
-        project.save()
-        return project
+         with transaction.atomic(): 
+            # Get all projects of this user
+            id=self.context['user_id']
+            projects_list = list(Project.objects.select_related('user').filter(user=id).order_by('project_id'))
+            
+             # delete all projects except the last added one
+            for i in range(len(projects_list)-1):
+                projects_list[i].delete()
+            
+            # save current project
+            project = Project(**validated_data)
+            project.project_name = project.line_name + " " + str(datetime.now())  
+            project.user = User.objects.get(id=self.context['user_id'])
+            
+            project.save()
+            
+            return project
 
 class ProjectUpdateSerialiser(serializers.ModelSerializer):
     class Meta:

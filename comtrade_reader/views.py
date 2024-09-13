@@ -77,7 +77,7 @@ class ProjectViewSet(ModelViewSet):
         if user.is_staff:
             return Project.objects.select_related('user').prefetch_related('files').all().order_by('project_id')
         # .reverse()     
-        return Project.objects.select_related('user').filter(user=user.id)
+        return Project.objects.select_related('user').filter(user=user.id).order_by('project_id').reverse()
 
     def get_serializer_class(self):
         if self.request.method == "PUT" or self.request.method == "PATCH":
@@ -88,6 +88,7 @@ class ProjectViewSet(ModelViewSet):
     #     return {'user_id': self.request.user.id}
 
 # TODO Logic to delete related files to be implemented    
+
 class FileViewSet(ModelViewSet):
 
     permission_classes = [IsAuthenticated]
