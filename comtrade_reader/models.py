@@ -70,9 +70,9 @@ class File(models.Model):
     
 class AnalogChannel(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='analog_channels')     
-    channel_id = models.CharField(max_length=10, primary_key=True)
+    channel_id = models.CharField(max_length=20, primary_key=True)
     id = models.IntegerField()
-    channel_name = models.CharField(max_length=10, default="")
+    channel_name = models.CharField(max_length=100, default="")
     phase = models.CharField(max_length=5)
     unit = models.CharField(max_length=5)
     primary = models.PositiveSmallIntegerField()
@@ -84,7 +84,7 @@ class DigitalChannel(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='digital_channels')     
     channel_id = models.CharField(max_length=10, primary_key=True)
     id = models.IntegerField()
-    channel_name = models.CharField(max_length=50, default="")
+    channel_name = models.CharField(max_length=100, default="")
     normal_state = models.PositiveSmallIntegerField()
     selected = models.BooleanField(default=False) #TODO this field must be removed
     
