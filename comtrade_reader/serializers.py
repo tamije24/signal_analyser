@@ -73,7 +73,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     primary = channel["primary"],
                     secondary = channel["secondary"],
                     pors = channel["pors"],
-                ) for channel in an_channels
+                ) for channel in an_channels if channel["channel_name"] in [file.ia_channel, file.ib_channel, file.ic_channel, file.va_channel, file.vb_channel, file.vc_channel]
             ]           
             AnalogChannel.objects.bulk_create(analog_channels)
                  
@@ -87,7 +87,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     id = channel["channel_id"],
                     channel_name = channel["channel_name"],
                     normal_state = channel["normal_state"]
-                ) for channel in dig_channels
+                ) for channel in dig_channels if channel["channel_name"] in [file.d1_channel, file.d2_channel, file.d3_channel, file.d4_channel]
             ]                
             DigitalChannel.objects.bulk_create(digital_channels)       
             
