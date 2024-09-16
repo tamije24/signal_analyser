@@ -92,12 +92,12 @@ class AnalogSignal(models.Model):
     sample_id = models.CharField(max_length=30, primary_key=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='analog_signals')  
     time_signal = models.DecimalField(max_digits=8, decimal_places=6)
-    ia_signal = models.FloatField()
-    ib_signal = models.FloatField()
-    ic_signal = models.FloatField()
-    va_signal = models.FloatField()
-    vb_signal = models.FloatField()
-    vc_signal = models.FloatField()
+    ia_signal = models.DecimalField(max_digits=12, decimal_places=6)
+    ib_signal = models.DecimalField(max_digits=12, decimal_places=6)
+    ic_signal = models.DecimalField(max_digits=12, decimal_places=6)
+    va_signal = models.DecimalField(max_digits=12, decimal_places=6)
+    vb_signal = models.DecimalField(max_digits=12, decimal_places=6)
+    vc_signal = models.DecimalField(max_digits=12, decimal_places=6)
     
 class DigitalSignal(models.Model):
     sample_id = models.CharField(max_length=30, primary_key=True)
