@@ -42,7 +42,19 @@ class ReadComtrade():
         total_samples = self.comtrade_record.total_samples 
         time_signal = self.comtrade_record.time   
         analog_signals = self.comtrade_record.analog
-        return [total_samples, time_signal, analog_signals]
+        analog_channels_converted =  []
+        
+        i = 0
+        for channel in self.comtrade_record.cfg.analog_channels:
+            if channel.pors == "S" or channel.pors == "s":
+                analog_channels_temp = [sample * channel.primary / channel.secondary for sample in analog_signals[i]]
+            else:
+                analog_channels_temp = analog_signals[i]    
+                
+            analog_channels_converted.append(analog_channels_temp)    
+            i=i+1  
+        
+        return [total_samples, time_signal, analog_channels_converted]
         
     def read_comtrade_digital_signals(self):
         total_samples = self.comtrade_record.total_samples 
