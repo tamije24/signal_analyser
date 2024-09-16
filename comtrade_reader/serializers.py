@@ -14,7 +14,7 @@ from utilities.handle_comtrade import ReadComtrade
 class SimpleFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ['file_id', 'station_name', 'start_time_stamp', 'trigger_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
+        fields = ['file_id', 'station_name', 'sampling_frequency', 'start_time_stamp', 'trigger_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
     
 class FileSerializer(serializers.ModelSerializer):  
     class Meta:
