@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import decimal 
 # import matplotlib.pyplot as plt
 
 class DFTPhasors():
@@ -17,28 +18,28 @@ class DFTPhasors():
         n = np.arange(0.5,fs/fn)
         cr = np.sin(Wn*n*Ts) / (len(n)/2)
         ci = np.cos(Wn*n*Ts) / (len(n)/2)     
+        
+        for i in range(len(cr)):
+            cr[i] = decimal.Decimal(cr[i])
+            ci[i] = decimal.Decimal(ci[i])
+            
         return [cr, ci]
     
     def estimate_dft_phasors(self, samples):
         L = len(samples)
         N = len(self.real_coeff)
                 
-        # phasor_magnitude = np.zeros((L))
-        # phasor_angle = np.zeros((L))
         estimated_phasor = np.zeros((L), dtype=np.complex128)
         
         # Correlation using DFT algorithm
         moving_data_window = np.zeros((N))
         for n in range(L):
             moving_data_window = [item for item in moving_data_window[1:]]            
-            moving_data_window = np.append(moving_data_window, [samples[n]])
+            moving_data_window = np.append(moving_data_window, float(samples[n]))
             
             phasor_real = np.sum(np.multiply(self.real_coeff, moving_data_window)) / math.sqrt(2)
             phasor_imag = np.sum(np.multiply(self.imag_coeff, moving_data_window)) / math.sqrt(2)
-            
-            # phasor_magnitude[n] = np.sqrt(phasor_real^2 + phasor_imag^2)
-            # phasor_angle[n] = np.atan2(phasor_imag, phasor_real)
-            
+                             
             estimated_phasor[n] = phasor_real + phasor_imag*1j
         
         return estimated_phasor    

@@ -91,13 +91,14 @@ class DigitalChannel(models.Model):
 class AnalogSignal(models.Model):
     sample_id = models.CharField(max_length=30, primary_key=True)
     file = models.ForeignKey(File, on_delete=models.CASCADE,  related_name='analog_signals')  
-    time_signal = models.DecimalField(max_digits=8, decimal_places=6)
+    time_signal = models.DecimalField(max_digits=8, decimal_places=6)  
     ia_signal = models.DecimalField(max_digits=12, decimal_places=6)
     ib_signal = models.DecimalField(max_digits=12, decimal_places=6)
     ic_signal = models.DecimalField(max_digits=12, decimal_places=6)
     va_signal = models.DecimalField(max_digits=12, decimal_places=6)
     vb_signal = models.DecimalField(max_digits=12, decimal_places=6)
     vc_signal = models.DecimalField(max_digits=12, decimal_places=6)
+    time_stamp = models.CharField(max_length=50, default="")
     
 class DigitalSignal(models.Model):
     sample_id = models.CharField(max_length=30, primary_key=True)

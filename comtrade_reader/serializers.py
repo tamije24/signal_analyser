@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db import transaction
 import numpy as np
 from rest_framework import serializers
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .models import AnalogSignal, DigitalSignal, Project, File , AnalogChannel, DigitalChannel
 from core.models import User
@@ -54,8 +54,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
             file.station_name = file_info["station_name"]
             file.analog_channel_count = file_info["analog_channel_count"]
             file.digital_channel_count = file_info["digital_channel_count"]
-            file.start_time_stamp = file_info ["start_time_stamp"]
-            file.trigger_time_stamp=file_info["trigger_time_stamp"]
+            file.start_time_stamp = datetime.fromisoformat(str(file_info ["start_time_stamp"]))
+            file.trigger_time_stamp=datetime.fromisoformat(str(file_info["trigger_time_stamp"]))
             file.line_frequency=file_info["line_frequency"]
             file.sampling_frequency=file_info["sampling_frequency"]
             file.save()    
@@ -102,8 +102,12 @@ class CreateFileSerializer(serializers.ModelSerializer):
             vb_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.vb_channel)) 
             vc_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.vc_channel)) 
             
+            st_time = datetime.fromisoformat(str(file_info ["start_time_stamp"]))
+            
             for i in range(total_samples):
                 t = time_values[i]
+                delta = timedelta(microseconds=t*1000000)
+                
                 analog_samples.append(AnalogSignal(
                     sample_id = "{}-{}".format(file.file_id, i),
                     file_id = file.file_id,
@@ -114,6 +118,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     va_signal = an_signals[va_channel[0].id-1][i] if len(va_channel) > 0 else 0,
                     vb_signal = an_signals[vb_channel[0].id-1][i] if len(vb_channel) > 0 else 0,
                     vc_signal = an_signals[vc_channel[0].id-1][i] if len(vc_channel) > 0 else 0,
+                    time_stamp = (st_time + delta).strftime('%d/%m/%Y, %H:%M:%S.%f'),
                 )) 
             AnalogSignal.objects.bulk_create(analog_samples)
 
@@ -248,7 +253,7 @@ class DigitalChannelSerializer(serializers.ModelSerializer):
 class AnalogSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalogSignal
-        fields =['time_signal', 'ia_signal', 'ib_signal', 'ic_signal', 'va_signal', 'vb_signal', 'vc_signal']
+        fields =['time_signal', 'ia_signal', 'ib_signal', 'ic_signal', 'va_signal', 'vb_signal', 'vc_signal', 'time_stamp']
         
 class DigitalSignalSerializer(serializers.ModelSerializer):
     class Meta:
