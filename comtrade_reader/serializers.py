@@ -235,8 +235,8 @@ class AnalogChannelSerializer(serializers.ModelSerializer):
     channel_name = serializers.CharField(read_only=True)  
     phase = serializers.CharField(read_only=True)  
     unit = serializers.CharField(read_only=True)  
-    primary = serializers.IntegerField(read_only=True)
-    secondary = serializers.IntegerField(read_only=True)
+    primary = serializers.FloatField(read_only=True)
+    secondary = serializers.FloatField(read_only=True)
     pors = serializers.CharField(read_only=True)
     
     class Meta:

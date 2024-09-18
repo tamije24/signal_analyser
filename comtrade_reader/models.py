@@ -75,8 +75,8 @@ class AnalogChannel(models.Model):
     channel_name = models.CharField(max_length=100, default="")
     phase = models.CharField(max_length=5)
     unit = models.CharField(max_length=5)
-    primary = models.PositiveSmallIntegerField()
-    secondary = models.PositiveSmallIntegerField()
+    primary = models.DecimalField(max_digits=8, decimal_places=4)
+    secondary = models.DecimalField(max_digits=8, decimal_places=4)
     pors = models.CharField(max_length=1)
     selected = models.BooleanField(default=False)  #TODO this field must be removed
     
