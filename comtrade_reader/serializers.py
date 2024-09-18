@@ -103,7 +103,9 @@ class CreateFileSerializer(serializers.ModelSerializer):
             vc_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.vc_channel)) 
             
             st_time = datetime.fromisoformat(str(file_info ["start_time_stamp"]))
-            
+            tr_time = datetime.fromisoformat(str(file_info["trigger_time_stamp"]))            
+            pre_fault = tr_time - st_time
+             
             for i in range(total_samples):
                 t = time_values[i]
                 delta = timedelta(microseconds=t*1000000)
@@ -111,7 +113,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                 analog_samples.append(AnalogSignal(
                     sample_id = "{}-{}".format(file.file_id, i),
                     file_id = file.file_id,
-                    time_signal = t,
+                    time_signal = t - pre_fault.total_seconds(),
                     ia_signal = an_signals[ia_channel[0].id-1][i] if len(ia_channel) > 0 else 0,
                     ib_signal = an_signals[ib_channel[0].id-1][i] if len(ib_channel) > 0 else 0,
                     ic_signal = an_signals[ic_channel[0].id-1][i] if len(ic_channel) > 0 else 0,
@@ -120,6 +122,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     vc_signal = an_signals[vc_channel[0].id-1][i] if len(vc_channel) > 0 else 0,
                     time_stamp = (st_time + delta).strftime('%d/%m/%Y, %H:%M:%S.%f'),
                 )) 
+                
             AnalogSignal.objects.bulk_create(analog_samples)
 
             # STORE THE DIGITAL SIGNALS
