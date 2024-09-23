@@ -173,6 +173,7 @@ class PhasorView(APIView):
         
         phasors = []
         dftphasor = DFTPhasors(fs=file.sampling_frequency, fn=file.line_frequency)
+        
         phasors.append(dftphasor.estimate_dft_phasors(ia_signal))
         phasors.append(dftphasor.estimate_dft_phasors(ib_signal))
         phasors.append(dftphasor.estimate_dft_phasors(ic_signal))

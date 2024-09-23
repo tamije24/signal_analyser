@@ -105,6 +105,17 @@ class CreateFileSerializer(serializers.ModelSerializer):
             st_time = datetime.fromisoformat(str(file_info ["start_time_stamp"]))
             tr_time = datetime.fromisoformat(str(file_info["trigger_time_stamp"]))            
             pre_fault = tr_time - st_time
+            
+            pre_fault_seconds = pre_fault.total_seconds()
+            newtime_list = [t for t in time_values if t >= pre_fault_seconds]
+            if len(newtime_list) == 0:
+                pre_fault_updated = 0
+            else:
+                pre_fault_updated = newtime_list[0]
+                
+            # print(st_time, tr_time, pre_fault)
+            # print(pre_fault_seconds)
+            # print(pre_fault_updated)
              
             for i in range(total_samples):
                 t = time_values[i]
@@ -113,7 +124,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                 analog_samples.append(AnalogSignal(
                     sample_id = "{}-{}".format(file.file_id, i),
                     file_id = file.file_id,
-                    time_signal = t - pre_fault.total_seconds(),
+                    time_signal = t - pre_fault_updated,
                     ia_signal = an_signals[ia_channel[0].id-1][i] if len(ia_channel) > 0 else 0,
                     ib_signal = an_signals[ib_channel[0].id-1][i] if len(ib_channel) > 0 else 0,
                     ic_signal = an_signals[ic_channel[0].id-1][i] if len(ic_channel) > 0 else 0,
