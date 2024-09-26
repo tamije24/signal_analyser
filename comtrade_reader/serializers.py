@@ -223,7 +223,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             projects_list = list(Project.objects.select_related('user').filter(user=id).order_by('project_id'))
             
              # delete all projects except the last added one
-            for i in range(len(projects_list)-2):
+            for i in range(len(projects_list)-1):
                 projects_list[i].delete()
             
             # save current project
