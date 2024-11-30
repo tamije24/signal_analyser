@@ -60,8 +60,7 @@ class File(models.Model):
     d2_channel = models.CharField(max_length=50,null=False, default="")
     d3_channel = models.CharField(max_length=50,null=False, default="")
     d4_channel = models.CharField(max_length=50,null=False, default="")
-    
-    
+       
     class Meta:
         indexes = [
             models.Index(fields=['station_name'])

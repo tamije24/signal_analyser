@@ -16,6 +16,7 @@ django-cors-headers = "*"
 whitenoise = "*"
 gunicorn = "*"
 dj-database-url = "*"
+matplotlib = "*"
 
 [dev-packages]
 

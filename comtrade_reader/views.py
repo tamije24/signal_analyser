@@ -16,7 +16,7 @@ from .serializers import DigitalSignalSerializer, ProjectSerializer, CreateProje
 
 from utilities.handle_comtrade import ReadComtrade
 from utilities.dft_phasors import DFTPhasors
-from utilities.sequence import Sequence
+from utilities.harmonics import Harmonics
 
 # logger = logging.getLogger(__name__)
 
@@ -203,6 +203,61 @@ class PhasorView(APIView):
         selected_phasors = {"phasors": split_phasors} 
         return Response(json.dumps(selected_phasors))
     
+class HarmonicsView(APIView):
+    http_method_names = ['get', 'head', 'options']
+    # renderer_classes = [JSONRenderer]
+    
+    def get(self, request, id, start, end):    
+        file_list = list(File.objects.filter(file_id=id))    
+        file = file_list[0]
+        
+        analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
+        ia_signal = [item.ia_signal for item in analog_signals]
+        ib_signal = [item.ib_signal for item in analog_signals]
+        ic_signal = [item.ic_signal for item in analog_signals]
+        va_signal = [item.va_signal for item in analog_signals]
+        vb_signal = [item.vb_signal for item in analog_signals]
+        vc_signal = [item.vc_signal for item in analog_signals]
+        
+        N = end - start                         # Selected window size (no of samples) 
+        fs = file.sampling_frequency            # Sampling frequency (Hz)
+        fn = file.line_frequency                # Nominal frequency (Hz) 
+        Nc = fs/fn                              # Samples / cycle
+        Nw = N / Nc                             # No of cycles of data available
+        new_end = start + int(np.round(Nw) * Nc)
+        # print(start, end, N, Nc, Nw, np.round(Nw), new_end)     
+        
+        harmonic_magnitudes = []
+        harmonics = Harmonics(fs=file.sampling_frequency, fn=file.line_frequency)
+        harmonic_magnitudes.append(harmonics.harmonic_frequencies)
+        
+        harmonic_magnitudes.append(harmonics.estimate_harmonics(ia_signal[start:new_end]))
+        harmonic_magnitudes.append(harmonics.estimate_harmonics(ib_signal[start:new_end]))
+        harmonic_magnitudes.append(harmonics.estimate_harmonics(ic_signal[start:new_end]))
+        harmonic_magnitudes.append(harmonics.estimate_harmonics(va_signal[start:new_end]))
+        harmonic_magnitudes.append(harmonics.estimate_harmonics(vb_signal[start:new_end]))
+        harmonic_magnitudes.append(harmonics.estimate_harmonics(vc_signal[start:new_end]))
+         
+        total_frequencies = len(harmonics.harmonic_frequencies)
+        harmonic_values = []
+        for i in range(total_frequencies):
+            harmonic = {}
+            harmonic["harmonic"] = i
+            harmonic["ia"] = harmonic_magnitudes[1][i]
+            harmonic["ib"] = harmonic_magnitudes[2][i]
+            harmonic["ic"] = harmonic_magnitudes[3][i]
+            harmonic["va"] = harmonic_magnitudes[4][i]
+            harmonic["vb"] = harmonic_magnitudes[5][i]
+            harmonic["vc"] = harmonic_magnitudes[6][i]
+         
+            harmonic_values.append(harmonic)
 
+        # selected_phasors = {"phasors": split_phasors} 
+        # return Response(json.dumps(selected_phasors))
+        
+        selected_harmonics = {"harmonics": harmonic_values} 
+        return Response(json.dumps(selected_harmonics))
+        
+        # return Response("OK")
 
 

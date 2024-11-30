@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path('phasors/<int:id>/', views.PhasorView.as_view()),
+    path('harmonics/<int:id>/<int:start>/<int:end>/', views.HarmonicsView.as_view()),
 ]
 
 router = routers.DefaultRouter()
@@ -41,3 +42,4 @@ urlpatterns += router.urls + projects_router.urls + files_router.urls
 # http://127.0.0.1:8000/comtrade_reader/files/1/dsignals/
 
 # http://127.0.0.1:8000/comtrade_reader/phasors/<file_id>/
+# http://127.0.0.1:8000/comtrade_reader/harmonics/<file_id>/<start_sample>/<end_sample>/
