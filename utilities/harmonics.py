@@ -39,7 +39,7 @@ class Harmonics():
                     X[count] = X[count] + arr_samples[n] * (np.sin(2*np.pi*n*m/N) - 1j*np.cos(2*np.pi*n*m/N))
                 count = count + 1
         
-            harmonics = np.abs(X) / (N/2)
+            harmonics = (np.abs(X) / (N/2)) / np.sqrt(2)
         else:
             harmonics = np.abs(X)
              

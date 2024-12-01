@@ -57,8 +57,12 @@ class CreateFileSerializer(serializers.ModelSerializer):
             file.start_time_stamp = datetime.fromisoformat(str(file_info ["start_time_stamp"]))
             file.trigger_time_stamp=datetime.fromisoformat(str(file_info["trigger_time_stamp"]))
             file.line_frequency=file_info["line_frequency"]
-            file.sampling_frequency=file_info["sampling_frequency"]
+            file.sampling_frequency=(1/(time_values[1]-time_values[0]))
+            # file.sampling_frequency=file_info["sampling_frequency"]
             file.save()    
+            
+            time_values
+            
             # print("File updated")                        
                                            
             # READ AND SAVE ANALOG CHANNEL INFORMATION       
@@ -252,7 +256,7 @@ class AnalogChannelSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AnalogChannel
-        fields = ['channel_id', 'id', 'channel_name', 'phase', 'unit', 'primary', 'secondary', 'pors', 'selected']     
+        fields = ['file', 'channel_id', 'id', 'channel_name', 'phase', 'unit', 'primary', 'secondary', 'pors', 'selected']     
          
 class DigitalChannelSerializer(serializers.ModelSerializer):
     channel_id = serializers.CharField(read_only=True)  
@@ -262,7 +266,7 @@ class DigitalChannelSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = DigitalChannel
-        fields = ['channel_id', 'id', 'channel_name', 'normal_state', 'selected']    
+        fields = ['file', 'channel_id', 'id', 'channel_name', 'normal_state', 'selected']    
 
 class AnalogSignalSerializer(serializers.ModelSerializer):
     class Meta:
@@ -272,4 +276,4 @@ class AnalogSignalSerializer(serializers.ModelSerializer):
 class DigitalSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = DigitalSignal
-        fields =['time_signal', 'd1_signal', 'd2_signal', 'd3_signal', 'd4_signal']
+        fields =['time_signal', 'd1_signal', 'd2_signal', 'd3_signal', 'd4_signal', 'file']

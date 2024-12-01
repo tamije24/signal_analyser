@@ -138,14 +138,80 @@ class DigitalChannelViewSet(ModelViewSet):
 
     def get_serializer_context(self):
         return {'file_id': self.kwargs['file_pk']}
+ 
+class AnalogSignalView(APIView):
+    http_method_names = ['get', 'head', 'options']
+    # renderer_classes = [JSONRenderer]
+    
+    def get(self, request, id):    
+        analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
+        ia_signal = [item.ia_signal for item in analog_signals]
+        ib_signal = [item.ib_signal for item in analog_signals]
+        ic_signal = [item.ic_signal for item in analog_signals]
+        va_signal = [item.va_signal for item in analog_signals]
+        vb_signal = [item.vb_signal for item in analog_signals]
+        vc_signal = [item.vc_signal for item in analog_signals]
+        time_signal = [item.time_signal for item in analog_signals]
+        time_stamp = [item.time_stamp for item in analog_signals]
+        
+        # print(time_signal)
+        # print(ia_signal)
+        
+        total_samples = len(ia_signal)
+        # print(total_samples)
+        
+        # signals = analog_signals
+        signals = []
+        for i in range(total_samples):
+            signal = {}
+            signal["ia_signal"] = np.double(ia_signal[i])
+            signal["ib_signal"] = np.double(ib_signal[i])
+            signal["ic_signal"] = np.double(ic_signal[i])
+            signal["va_signal"] = np.double(va_signal[i])
+            signal["vb_signal"] = np.double(vb_signal[i])
+            signal["vc_signal"] = np.double(vc_signal[i])
+            signal["time_signal"] = np.double(time_signal[i])
+            signal["time_stamp"] = time_stamp[i]
+            signals.append(signal)
+        
+        my_signals = {"signals": signals, "file": id} 
+        
+        # print(my_signals)
+        
+        return Response(json.dumps(my_signals)) 
      
 class AnalogSignalViewSet(ModelViewSet):
     
     http_method_names = ['get', 'head', 'options']
     serializer_class = AnalogSignalSerializer
+
     
     def get_queryset(self):
         return AnalogSignal.objects.filter(file_id=self.kwargs['file_pk']).order_by('time_signal')
+
+class DigitalSignalView(APIView):
+    http_method_names = ['get', 'head', 'options']
+    # renderer_classes = [JSONRenderer]
+     
+    def get(self, request, id):    
+        digital_signals = list(DigitalSignal.objects.filter(file_id=id).order_by('time_signal'))
+        d1_signal = [item.d1_signal for item in digital_signals]
+        d2_signal = [item.d2_signal for item in digital_signals]
+        d3_signal = [item.d3_signal for item in digital_signals]
+        d4_signal = [item.d4_signal for item in digital_signals]
+          
+        total_samples = len(d1_signal)
+        signals = []
+        for i in range(total_samples):
+            signal = {}
+            signal["d1_signal"] = int(d1_signal[i])
+            signal["d2_signal"] = int(d2_signal[i])
+            signal["d3_signal"] = int(d3_signal[i])
+            signal["d4_signal"] = int(d4_signal[i])
+            signals.append(signal)
+        
+        my_signals = {"signals": signals, "file": id} 
+        return Response(json.dumps(my_signals)) 
 
 class DigtialSignalViewSet(ModelViewSet):
     
@@ -159,8 +225,10 @@ class PhasorView(APIView):
     http_method_names = ['get', 'head', 'options']
     # renderer_classes = [JSONRenderer]
     
-    def get(self, request, id):    
-        file_list = list(File.objects.filter(file_id=id))    
+    def get(self, request, id): 
+        # print(id)   
+        file_list = list(File.objects.filter(file_id=id).order_by('file_id'))  
+        # print(file_list)  
         file = file_list[0]
         
         analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
@@ -172,6 +240,7 @@ class PhasorView(APIView):
         vc_signal = [item.vc_signal for item in analog_signals]
         
         phasors = []
+        # print(file.sampling_frequency, file.line_frequency)
         dftphasor = DFTPhasors(fs=file.sampling_frequency, fn=file.line_frequency)
         
         phasors.append(dftphasor.estimate_dft_phasors(ia_signal))
@@ -200,7 +269,7 @@ class PhasorView(APIView):
          
             split_phasors.append(split_phasor)
 
-        selected_phasors = {"phasors": split_phasors} 
+        selected_phasors = {"phasors": split_phasors, "file": id} 
         return Response(json.dumps(selected_phasors))
     
 class HarmonicsView(APIView):
