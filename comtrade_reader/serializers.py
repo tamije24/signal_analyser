@@ -5,7 +5,7 @@ import numpy as np
 from rest_framework import serializers
 from datetime import datetime, timedelta
 
-from .models import AnalogSignal, DigitalSignal, Project, File , AnalogChannel, DigitalChannel
+from .models import AnalogSignal, AnalogSignalResampled, DigitalSignal, Project, File , AnalogChannel, DigitalChannel
 from core.models import User
 from core.serializers import SimpleUserSerializer
 
@@ -14,17 +14,18 @@ from utilities.handle_comtrade import ReadComtrade
 class SimpleFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ['file_id', 'station_name', 'sampling_frequency', 'start_time_stamp', 'trigger_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
+        fields = ['file_id', 'station_name', 'sampling_frequency', 'resampled_frequency', 'start_time_stamp', 'trigger_time_stamp', 'ia_channel', 'ib_channel', 'ic_channel', 'in_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel',
+        'd5_channel', 'd6_channel', 'd7_channel', 'd8_channel', 'd9_channel', 'd10_channel', 'd11_channel', 'd12_channel']
     
 class FileSerializer(serializers.ModelSerializer):  
     class Meta:
         model = File
-        fields = ['file_id', 'cfg_file', 'dat_file', 'station_name', 'analog_channel_count', 'digital_channel_count', 'start_time_stamp', 'trigger_time_stamp', 'line_frequency', 'sampling_frequency', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
+        fields = ['file_id', 'cfg_file', 'dat_file', 'station_name', 'analog_channel_count', 'digital_channel_count', 'start_time_stamp', 'trigger_time_stamp', 'line_frequency', 'sampling_frequency', 'resampled_frequency', 'ia_channel', 'ib_channel', 'ic_channel', 'in_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel', 'd5_channel', 'd6_channel', 'd7_channel', 'd8_channel', 'd9_channel', 'd10_channel', 'd11_channel', 'd12_channel']
        
 class CreateFileSerializer(serializers.ModelSerializer):  
     class Meta:
         model = File
-        fields = ['file_id', 'cfg_file', 'dat_file', 'ia_channel', 'ib_channel', 'ic_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel']
+        fields = ['file_id', 'cfg_file', 'dat_file', 'ia_channel', 'ib_channel', 'ic_channel', 'in_channel', 'va_channel', 'vb_channel', 'vc_channel', 'd1_channel', 'd2_channel', 'd3_channel', 'd4_channel', 'd5_channel', 'd6_channel', 'd7_channel', 'd8_channel', 'd9_channel', 'd10_channel', 'd11_channel', 'd12_channel']
     
     def create(self, validated_data):       
         with transaction.atomic(): 
@@ -55,13 +56,14 @@ class CreateFileSerializer(serializers.ModelSerializer):
             file.analog_channel_count = file_info["analog_channel_count"]
             file.digital_channel_count = file_info["digital_channel_count"]
             file.start_time_stamp = datetime.fromisoformat(str(file_info ["start_time_stamp"]))
-            file.trigger_time_stamp=datetime.fromisoformat(str(file_info["trigger_time_stamp"]))
-            file.line_frequency=file_info["line_frequency"]
-            file.sampling_frequency=(1/(time_values[1]-time_values[0]))
+            file.trigger_time_stamp = datetime.fromisoformat(str(file_info["trigger_time_stamp"]))
+            file.line_frequency = file_info["line_frequency"]
+            file.sampling_frequency = (1/(time_values[1]-time_values[0]))
+            file.resampled_frequency = 0
             # file.sampling_frequency=file_info["sampling_frequency"]
             file.save()    
             
-            time_values
+            # time_values
             
             # print("File updated")                        
                                            
@@ -77,7 +79,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     primary = channel["primary"],
                     secondary = channel["secondary"],
                     pors = channel["pors"],
-                ) for channel in an_channels if channel["channel_name"] in [file.ia_channel, file.ib_channel, file.ic_channel, file.va_channel, file.vb_channel, file.vc_channel]
+                ) for channel in an_channels if channel["channel_name"] in [file.ia_channel, file.ib_channel, file.ic_channel, file.in_channel, file.va_channel, file.vb_channel, file.vc_channel]
             ]           
             AnalogChannel.objects.bulk_create(analog_channels)
                  
@@ -91,7 +93,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     id = channel["channel_id"],
                     channel_name = channel["channel_name"],
                     normal_state = channel["normal_state"]
-                ) for channel in dig_channels if channel["channel_name"] in [file.d1_channel, file.d2_channel, file.d3_channel, file.d4_channel]
+                ) for channel in dig_channels if channel["channel_name"] in [file.d1_channel, file.d2_channel, file.d3_channel, file.d4_channel, file.d5_channel, file.d6_channel, file.d7_channel, file.d8_channel, file.d9_channel, file.d10_channel, file.d11_channel, file.d12_channel]
             ]                
             DigitalChannel.objects.bulk_create(digital_channels)       
             
@@ -102,6 +104,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
             ia_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.ia_channel))
             ib_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.ib_channel))
             ic_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.ic_channel)) 
+            in_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.in_channel)) 
             va_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.va_channel)) 
             vb_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.vb_channel)) 
             vc_channel = list(AnalogChannel.objects.filter(file_id=file.file_id, channel_name=file.vc_channel)) 
@@ -132,6 +135,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     ia_signal = an_signals[ia_channel[0].id-1][i] if len(ia_channel) > 0 else 0,
                     ib_signal = an_signals[ib_channel[0].id-1][i] if len(ib_channel) > 0 else 0,
                     ic_signal = an_signals[ic_channel[0].id-1][i] if len(ic_channel) > 0 else 0,
+                    in_signal = an_signals[in_channel[0].id-1][i] if len(in_channel) > 0 else 0,
                     va_signal = an_signals[va_channel[0].id-1][i] if len(va_channel) > 0 else 0,
                     vb_signal = an_signals[vb_channel[0].id-1][i] if len(vb_channel) > 0 else 0,
                     vc_signal = an_signals[vc_channel[0].id-1][i] if len(vc_channel) > 0 else 0,
@@ -146,6 +150,14 @@ class CreateFileSerializer(serializers.ModelSerializer):
             d2_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d2_channel))
             d3_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d3_channel))
             d4_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d4_channel))
+            d5_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d5_channel))
+            d6_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d6_channel))
+            d7_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d7_channel))
+            d8_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d8_channel))
+            d9_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d9_channel))
+            d10_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d10_channel))
+            d11_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d11_channel))
+            d12_channel = list(DigitalChannel.objects.filter(file_id=file.file_id, channel_name=file.d12_channel))
             for i in range(total_samples):
                 t = time_values[i]
                 digital_samples.append(DigitalSignal(
@@ -156,6 +168,14 @@ class CreateFileSerializer(serializers.ModelSerializer):
                     d2_signal = dig_signals[d2_channel[0].id-1][i] if len(d2_channel) > 0 else 0,
                     d3_signal = dig_signals[d3_channel[0].id-1][i] if len(d3_channel) > 0 else 0,
                     d4_signal = dig_signals[d4_channel[0].id-1][i] if len(d4_channel) > 0 else 0,
+                    d5_signal = dig_signals[d5_channel[0].id-1][i] if len(d5_channel) > 0 else 0,
+                    d6_signal = dig_signals[d6_channel[0].id-1][i] if len(d6_channel) > 0 else 0,
+                    d7_signal = dig_signals[d7_channel[0].id-1][i] if len(d7_channel) > 0 else 0,
+                    d8_signal = dig_signals[d8_channel[0].id-1][i] if len(d8_channel) > 0 else 0,
+                    d9_signal = dig_signals[d9_channel[0].id-1][i] if len(d9_channel) > 0 else 0,
+                    d10_signal = dig_signals[d10_channel[0].id-1][i] if len(d10_channel) > 0 else 0,
+                    d11_signal = dig_signals[d11_channel[0].id-1][i] if len(d11_channel) > 0 else 0,
+                    d12_signal = dig_signals[d12_channel[0].id-1][i] if len(d12_channel) > 0 else 0,
                 )) 
             DigitalSignal.objects.bulk_create(digital_samples)
             
@@ -271,9 +291,11 @@ class DigitalChannelSerializer(serializers.ModelSerializer):
 class AnalogSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnalogSignal
-        fields =['time_signal', 'ia_signal', 'ib_signal', 'ic_signal', 'va_signal', 'vb_signal', 'vc_signal', 'time_stamp']
+        fields =['time_signal', 'ia_signal', 'ib_signal', 'ic_signal', 'in_signal', 'va_signal', 'vb_signal', 'vc_signal', 'time_stamp']
         
 class DigitalSignalSerializer(serializers.ModelSerializer):
     class Meta:
         model = DigitalSignal
-        fields =['time_signal', 'd1_signal', 'd2_signal', 'd3_signal', 'd4_signal', 'file']
+        fields =['time_signal', 'd1_signal', 'd2_signal', 'd3_signal', 'd4_signal', 'd5_signal', 'd6_signal', 'd7_signal', 'd8_signal', 'd9_signal', 'd10_signal', 'd11_signal', 'd12_signal', 'file']
+        
+    
