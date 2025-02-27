@@ -51,6 +51,7 @@ except ModuleNotFoundError:
 
 # COMTRADE standard revisions
 REV_1991 = "1991"
+REV_1997 = "1997"
 REV_1999 = "1999"
 REV_2001 = "2001"
 REV_2013 = "2013"
@@ -415,7 +416,7 @@ class Cfg:
             self._station_name, self._rec_dev_id, self._rev_year = packed
             self._rev_year = self._rev_year.strip()
 
-            if self._rev_year not in (REV_1991, REV_1999, REV_2001, REV_2013):
+            if self._rev_year not in (REV_1991, REV_1997, REV_1999, REV_2001, REV_2013):
                 if not self._ignore_warnings:
                     msg = _WARNING_UNKNOWN_REVISION.format(self._rev_year)
                     warnings.warn(Warning(msg))
@@ -521,7 +522,7 @@ class Cfg:
         line_count = line_count + 1
 
         # Timestamp multiplication factor
-        if self._rev_year in (REV_1999, REV_2001, REV_2013):
+        if self._rev_year in (REV_1997, REV_1999, REV_2001, REV_2013):
             line = _eof_strip(cfg.readline())
             if len(line) > 0:
                 self._time_multiplier = float(line)
@@ -1193,7 +1194,10 @@ class _AsciiDatReader(_DatReader):
         # auxiliary vectors (channels gains and offsets)
         a = [x.a for x in self._cfg.analog_channels]
         b = [x.b for x in self._cfg.analog_channels]
-
+        pors = [x.pors for x in self._cfg.analog_channels]
+        primary = [x.primary for x in self._cfg.analog_channels]
+        secondary = [x.secondary for x in self._cfg.analog_channels]
+        
         # extract lines
         if type(contents) is str:
             lines = contents.splitlines()
@@ -1219,7 +1223,10 @@ class _AsciiDatReader(_DatReader):
             # store
             self.time[line_number - 1] = ts
             for i in range(analog_count):
-                self.analog[i][line_number - 1] = avalues[i]
+                if pors[i] == "P":
+                    self.analog[i][line_number - 1] = avalues[i]
+                else:
+                    self.analog[i][line_number - 1] = avalues[i] * (primary[i]/secondary[i])    
             for i in range(status_count):
                 self.status[i][line_number - 1] = svalues[i]
 

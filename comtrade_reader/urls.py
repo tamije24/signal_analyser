@@ -4,6 +4,8 @@ from rest_framework_nested import routers
 from . import views
 
 urlpatterns = [
+    path('afa-projects-new/',views.ProjectAndFilesViewSet.as_view()),
+    path('afa-projects/<afa_id>/', views.ProjectAFAView.as_view()),
     path('phasors/<int:id>/<int:src>/', views.PhasorView.as_view()),
     path('harmonics/<int:id>/<int:start>/<int:end>/<int:src>/', views.HarmonicsView.as_view()),
     path('asignals/<int:id>/<int:src>/', views.AnalogSignalView.as_view()),
@@ -29,6 +31,8 @@ urlpatterns += router.urls + projects_router.urls + files_router.urls
 # http://127.0.0.1:8000/comtrade_reader/projects/1/
 # http://127.0.0.1:8000/comtrade_reader/projects/1/files/
 # http://127.0.0.1:8000/comtrade_reader/projects/1/files/1/
+# http://127.0.0.1:8000/comtrade_reader/afa-projects/dummy_1/
+# http://127.0.0.1:8000/comtrade_reader/afa-projects-new/
 
 # http://127.0.0.1:8000/comtrade_reader/files/  => no viewing
 # http://127.0.0.1:8000/comtrade_reader/files/1/achannels/
