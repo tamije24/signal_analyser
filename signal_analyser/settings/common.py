@@ -65,6 +65,10 @@ CORS_ALLOWED_ORIGINS = [
     'https://viewer-neon-alpha.vercel.app'
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://viewer-neon-alpha.vercel.app'
+]
+
 ROOT_URLCONF = "signal_analyser.urls"
 
 TEMPLATES = [
