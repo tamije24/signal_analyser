@@ -1223,10 +1223,11 @@ class _AsciiDatReader(_DatReader):
             # store
             self.time[line_number - 1] = ts
             for i in range(analog_count):
-                if pors[i] == "P":
+                if pors[i].lower() == "p":
                     self.analog[i][line_number - 1] = avalues[i]
                 else:
                     self.analog[i][line_number - 1] = avalues[i] * (primary[i]/secondary[i])    
+                    
             for i in range(status_count):
                 self.status[i][line_number - 1] = svalues[i]
 
