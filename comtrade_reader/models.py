@@ -28,8 +28,7 @@ class Project(models.Model):
         
     def __str__(self) -> str:
         return self.project_name
-    
-    
+      
 class File(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, 
                                          related_name='files')

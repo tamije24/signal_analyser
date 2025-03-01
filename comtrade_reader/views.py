@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.conf import settings
 from django.db.models.aggregates import Count
 from django.db import transaction
@@ -218,17 +219,13 @@ class PhasorView(APIView):
     http_method_names = ['get', 'head', 'options']
     # renderer_classes = [JSONRenderer]
     
-    def get(self, request, id, src): 
+    def get(self, request, id): 
         # print(id)   
         file_list = list(File.objects.filter(file_id=id).order_by('file_id'))  
         # print(file_list)  
         file = file_list[0]
         
-        if src == 1:
-            analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
-        else:
-            analog_signals = list(AnalogSignalResampled.objects.filter(file_id=id).order_by('time_signal'))
-                
+        analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
         ia_signal = [item.ia_signal for item in analog_signals]
         ib_signal = [item.ib_signal for item in analog_signals]
         ic_signal = [item.ic_signal for item in analog_signals]
@@ -272,6 +269,75 @@ class PhasorView(APIView):
 
         selected_phasors = {"phasors": split_phasors, "file": id} 
         return Response(json.dumps(selected_phasors))
+  
+class ResamplePhasorView(APIView):
+    http_method_names = ['get', 'head', 'options']
+    # renderer_classes = [JSONRenderer]
+    
+    def get(self, request, id): 
+        # Get all files under this project
+        file_list = list(File.objects.filter(project_id=id).order_by('file_id'))  
+        
+        if len(file_list) == 0:
+            return Response(status=status.HTTP_204_NO_CONTENT)  
+        
+        dftphasor = DFTPhasors(fs=file_list[0].resampled_frequency, fn=file_list[0].line_frequency)
+       # dftphasor = DFTPhasors(fs=2000, fn=file_list[0].line_frequency)
+        split_phasors = []
+        
+        phasors = []
+        max_samples = 0
+        # Do the following for each file
+        for i in range(len(file_list)):
+            file = file_list[i]
+            analog_signals = list(AnalogSignalResampled.objects.filter(file_id=file.file_id).order_by('time_signal'))
+                
+            ia_signal = [item.ia_signal for item in analog_signals]
+            ib_signal = [item.ib_signal for item in analog_signals]
+            ic_signal = [item.ic_signal for item in analog_signals]
+            in_signal = [item.in_signal for item in analog_signals]
+            va_signal = [item.va_signal for item in analog_signals]
+            vb_signal = [item.vb_signal for item in analog_signals]
+            vc_signal = [item.vc_signal for item in analog_signals]
+        
+            phasors.append(dftphasor.estimate_dft_phasors(ia_signal))
+            phasors.append(dftphasor.estimate_dft_phasors(ib_signal))
+            phasors.append(dftphasor.estimate_dft_phasors(ic_signal))
+            phasors.append(dftphasor.estimate_dft_phasors(in_signal))
+            phasors.append(dftphasor.estimate_dft_phasors(va_signal))
+            phasors.append(dftphasor.estimate_dft_phasors(vb_signal))
+            phasors.append(dftphasor.estimate_dft_phasors(vc_signal))
+            
+            max_samples = max(max_samples, len(ia_signal))
+        
+        for i in range(max_samples):
+            split_phasor = {}
+            
+            for j in range(len(file_list)):
+                num = str(j + 1)
+                offset = j*7
+                if i < len(phasors[offset]) and len(file_list) > j:
+                    split_phasor["ia-mag-"+num] = np.absolute(phasors[offset+0][i])
+                    split_phasor["ia-ang-"+num] = np.angle(phasors[offset+0][i])
+                    split_phasor["ib-mag-"+num] = np.absolute(phasors[offset+1][i])
+                    split_phasor["ib-ang-"+num] = np.angle(phasors[offset+1][i])
+                    split_phasor["ic-mag-"+num] = np.absolute(phasors[offset+2][i])
+                    split_phasor["ic-ang-"+num] = np.angle(phasors[offset+2][i])
+                    split_phasor["in-mag-"+num] = np.absolute(phasors[offset+3][i])
+                    split_phasor["in-ang-"+num] = np.angle(phasors[offset+3][i])
+                    split_phasor["va-mag-"+num] = np.absolute(phasors[offset+4][i])
+                    split_phasor["va-ang-"+num] = np.angle(phasors[offset+4][i])
+                    split_phasor["vb-mag-"+num] = np.absolute(phasors[offset+5][i])
+                    split_phasor["vb-ang-"+num] = np.angle(phasors[offset+5][i])
+                    split_phasor["vc-mag-"+num] = np.absolute(phasors[offset+6][i])
+                    split_phasor["vc-ang-"+num] = np.angle(phasors[offset+6][i])    
+                    
+            # if i == 200:
+            #     print(split_phasor)        
+                    
+            split_phasors.append(split_phasor)
+        selected_phasors = {"phasors": split_phasors} 
+        return Response(json.dumps(selected_phasors))  
     
 class HarmonicsView(APIView):
     http_method_names = ['get', 'head', 'options']
@@ -343,144 +409,247 @@ class ResampleView(APIView):
     http_method_names = ['get', 'head', 'options']
     
     def get(self, request, id, fsnew):
-              
-        # Read file information
-        file_list = list(File.objects.filter(file_id=id).order_by('file_id'))  
-        file = file_list[0]
-        resampled_frequency = file.resampled_frequency
-        fsold = file.sampling_frequency
+                 
+        # Get all files under this project
+        file_list = list(File.objects.filter(project_id=id).order_by('file_id'))  
         
-        # Check if resampling already done        
-        resampled_signals = list(AnalogSignalResampled.objects.filter(file_id=id).order_by('time_signal'))
-        
-        # Check if resampling already done for this file
-        if resampled_frequency == fsnew and len(resampled_signals) > 0:
-            # Resampling already done
-            return Response(id, status=status.HTTP_201_CREATED)
-
-        else:        
-            # Do resampling
-            with transaction.atomic(): 
-                
-                # If resampled signals already present (different sampling frequency) delete the records
-                resampled_signals = list(AnalogSignalResampled.objects.filter(file_id=id).order_by('time_signal'))
-                for i in range(len(resampled_signals)):
-                    resampled_signals[i].delete()
-                
-                resampled_signals = list(DigitalSignalResampled.objects.filter(file_id=id).order_by('time_signal'))
-                for i in range(len(resampled_signals)):
-                    resampled_signals[i].delete()
-                
-                # READ ANALOG SIGNALS
-                analog_signals = list(AnalogSignal.objects.filter(file_id=id).order_by('time_signal'))
-                ia_signal = [item.ia_signal for item in analog_signals]
-                ib_signal = [item.ib_signal for item in analog_signals]
-                ic_signal = [item.ic_signal for item in analog_signals]
-                in_signal = [item.in_signal for item in analog_signals]
-                va_signal = [item.va_signal for item in analog_signals]
-                vb_signal = [item.vb_signal for item in analog_signals]
-                vc_signal = [item.vc_signal for item in analog_signals]
-                time_signal = [item.time_signal for item in analog_signals]
-                time_stamp = [item.time_stamp for item in analog_signals]
+        # Do the following for each file
+        for i in range(len(file_list)):
+            file = file_list[i]
+            resampled_frequency = file.resampled_frequency
+            fsold = file.sampling_frequency
             
-                # RESAMPLE ANALOG SIGNALS
-                t_step = time_signal[1] - time_signal[0]
-                resampling = ResampleSignals(fs_new=fsnew, fs_old=fsold, t_step=t_step)
-            
-                new_ia_signal = resampling.resample_by_interpolation(ia_signal)
-                new_ib_signal = resampling.resample_by_interpolation(ib_signal)
-                new_ic_signal = resampling.resample_by_interpolation(ic_signal)
-                new_in_signal = resampling.resample_by_interpolation(in_signal)
-                new_va_signal = resampling.resample_by_interpolation(va_signal)
-                new_vb_signal = resampling.resample_by_interpolation(vb_signal)
-                new_vc_signal = resampling.resample_by_interpolation(vc_signal)
-                
-                new_time_signal = np.linspace(min(time_signal), max(time_signal), len(new_ia_signal))
-            
-                total_samples = len(new_ia_signal)
-            
-                st_time = datetime.fromisoformat(str(file.start_time_stamp ))
-                t_step_new = float(new_time_signal[1] - new_time_signal[0])
-                delta = timedelta(microseconds=t_step_new*1000000.0)
+            # Read resampled signals if already present        
+            resampled_signals = list(AnalogSignalResampled.objects.filter(file_id=file.file_id).order_by('time_signal'))
+            # Check if resampling already done for this file
+            if resampled_frequency != fsnew or len(resampled_signals) == 0:
+                # Do resampling
+                with transaction.atomic(): 
                     
-                analog_samples = []    
-                for i in range(total_samples):
-                    temp = (st_time + i*delta).strftime('%d/%m/%Y, %H:%M:%S.%f')
-                    analog_samples.append(AnalogSignalResampled(
-                        sample_id = "{}-{}".format(id, i),
-                        file_id = id,
-                        time_signal = np.double(new_time_signal[i]),
-                        ia_signal = np.double(new_ia_signal[i]),
-                        ib_signal = np.double(new_ib_signal[i]),
-                        ic_signal = np.double(new_ic_signal[i]),
-                        in_signal = np.double(new_in_signal[i]),
-                        va_signal = np.double(new_va_signal[i]),
-                        vb_signal = np.double(new_vb_signal[i]),
-                        vc_signal = np.double(new_vc_signal[i]),
-                        time_stamp = temp,
-                    )) 
+                    # If resampled signals already present (different sampling frequency) delete the records
+                    resampled_signals = list(AnalogSignalResampled.objects.filter(file_id=file.file_id).order_by('time_signal'))
+                    for i in range(len(resampled_signals)):
+                        resampled_signals[i].delete()
                     
-                # Save to table
-                AnalogSignalResampled.objects.bulk_create(analog_samples)
-                              
-                # READ DIGITAL SIGNALS
-                digital_signals = list(DigitalSignal.objects.filter(file_id=id).order_by('time_signal'))
-                d1_signal = [item.d1_signal for item in digital_signals]
-                d2_signal = [item.d2_signal for item in digital_signals]
-                d3_signal = [item.d3_signal for item in digital_signals]
-                d4_signal = [item.d4_signal for item in digital_signals]
-                d5_signal = [item.d5_signal for item in digital_signals]
-                d6_signal = [item.d6_signal for item in digital_signals]
-                d7_signal = [item.d7_signal for item in digital_signals]
-                d8_signal = [item.d8_signal for item in digital_signals]
-                d9_signal = [item.d9_signal for item in digital_signals]
-                d10_signal = [item.d10_signal for item in digital_signals]
-                d11_signal = [item.d11_signal for item in digital_signals]
-                d12_signal = [item.d12_signal for item in digital_signals]
-                
-                # RESAMPLE DIGITAL SIGNALS
-                new_d1_signal = resampling.resample_by_interpolation(d1_signal)
-                new_d2_signal = resampling.resample_by_interpolation(d2_signal)
-                new_d3_signal = resampling.resample_by_interpolation(d3_signal)
-                new_d4_signal = resampling.resample_by_interpolation(d4_signal)
-                new_d5_signal = resampling.resample_by_interpolation(d5_signal)
-                new_d6_signal = resampling.resample_by_interpolation(d6_signal)
-                new_d7_signal = resampling.resample_by_interpolation(d7_signal)
-                new_d8_signal = resampling.resample_by_interpolation(d8_signal)
-                new_d9_signal = resampling.resample_by_interpolation(d9_signal)
-                new_d10_signal = resampling.resample_by_interpolation(d10_signal)
-                new_d11_signal = resampling.resample_by_interpolation(d11_signal)
-                new_d12_signal = resampling.resample_by_interpolation(d12_signal)
-                
-                digital_samples = []
-                for i in range(total_samples):
-                    digital_samples.append(DigitalSignalResampled(
-                        sample_id = "{}-{}".format(id, i),    
-                        file_id = id,
-                        time_signal = np.double(new_time_signal[i]),
-                        d1_signal = new_d1_signal[i],
-                        d2_signal = new_d2_signal[i],
-                        d3_signal = new_d3_signal[i],
-                        d4_signal = new_d4_signal[i],
-                        d5_signal = new_d5_signal[i],
-                        d6_signal = new_d6_signal[i],
-                        d7_signal = new_d7_signal[i],
-                        d8_signal = new_d8_signal[i],
-                        d9_signal = new_d9_signal[i],
-                        d10_signal = new_d10_signal[i],
-                        d11_signal = new_d11_signal[i],
-                        d12_signal = new_d12_signal[i],
-                    )) 
+                    resampled_signals = list(DigitalSignalResampled.objects.filter(file_id=file.file_id).order_by('time_signal'))
+                    for i in range(len(resampled_signals)):
+                        resampled_signals[i].delete()
                     
-                # Save to table
-                DigitalSignalResampled.objects.bulk_create(digital_samples)
-                
-                # Update resampled frequency value
-                file.resampled_frequency = fsnew
-                file.save()    
+                    # RESAMPLE ANALOG SIGNALS
+                    self.resampleAnalogSignals(file, fsold, fsnew)
+ 
+                    # RESAMPLE DIGITAL SIGNALS    
+                    self.resampleDigitalSignals(file, fsold, fsnew)    
+                                
+                    # Update resampled frequency value
+                    file.resampled_frequency = fsnew
+                    file.save()    
         
         return Response(id, status=status.HTTP_201_CREATED)
 
+    def resampleAnalogSignals(self, file, fsold, fsnew):
+         # CONVERT ALL CURRENT SIGNALS TO A (from kA) and VOLTAGE SIGNALS TO V (from kV)             
+        multipliers = self.getMultipliers(file)     
+        
+        # READ ANALOG SIGNALS
+        analog_signals = list(AnalogSignal.objects.filter(file_id=file.file_id).order_by('time_signal'))
+        ia_signal = [item.ia_signal*multipliers[0] for item in analog_signals]
+        ib_signal = [item.ib_signal*multipliers[1] for item in analog_signals]
+        ic_signal = [item.ic_signal*multipliers[2] for item in analog_signals]
+        in_signal = [item.in_signal*multipliers[3] for item in analog_signals]
+        va_signal = [item.va_signal*multipliers[4] for item in analog_signals]
+        vb_signal = [item.vb_signal*multipliers[5] for item in analog_signals]
+        vc_signal = [item.vc_signal*multipliers[6] for item in analog_signals]
+        time_signal = [item.time_signal for item in analog_signals]
+        time_stamp = [item.time_stamp for item in analog_signals]
+                    
+        # ia_signal = ia_signal * np.double(multipliers[0])
+        # ib_signal = ib_signal * np.double(multipliers[1])
+        # ic_signal = ic_signal * np.double(multipliers[2])
+        # in_signal = in_signal * np.double(multipliers[3])
+        # va_signal = va_signal * np.double(multipliers[4])
+        # vb_signal = vb_signal * np.double(multipliers[5])
+        # vc_signal = vc_signal * np.double(multipliers[6])
+                    
+        analog_samples = []    
+                    
+        # CHECK IF RESAMPLING NEEDS TO BE DONE
+        if fsold < fsnew:
+            # RESAMPLE ANALOG SIGNALS
+            t_step = time_signal[1] - time_signal[0]
+            resampling = ResampleSignals(fs_new=fsnew, fs_old=fsold, t_step=t_step)
+        
+            new_ia_signal = resampling.resample_by_interpolation(ia_signal)
+            new_ib_signal = resampling.resample_by_interpolation(ib_signal)
+            new_ic_signal = resampling.resample_by_interpolation(ic_signal)
+            new_in_signal = resampling.resample_by_interpolation(in_signal)
+            new_va_signal = resampling.resample_by_interpolation(va_signal)
+            new_vb_signal = resampling.resample_by_interpolation(vb_signal)
+            new_vc_signal = resampling.resample_by_interpolation(vc_signal)
+            
+            new_time_signal = np.linspace(min(time_signal), max(time_signal), len(new_ia_signal))
+        
+            total_samples = len(new_ia_signal)
+        
+            st_time = datetime.fromisoformat(str(file.start_time_stamp ))
+            t_step_new = float(new_time_signal[1] - new_time_signal[0])
+            delta = timedelta(microseconds=t_step_new*1000000.0)
+            
+            for i in range(total_samples):
+                temp = (st_time + i*delta).strftime('%d/%m/%Y, %H:%M:%S.%f')
+                analog_samples.append(AnalogSignalResampled(
+                    sample_id = "{}-{}".format(file.file_id, i),
+                    file_id = file.file_id,
+                    time_signal = np.double(new_time_signal[i]),
+                    ia_signal = np.double(new_ia_signal[i]),
+                    ib_signal = np.double(new_ib_signal[i]),
+                    ic_signal = np.double(new_ic_signal[i]),
+                    in_signal = np.double(new_in_signal[i]),
+                    va_signal = np.double(new_va_signal[i]),
+                    vb_signal = np.double(new_vb_signal[i]),
+                    vc_signal = np.double(new_vc_signal[i]),
+                    time_stamp = temp,
+                )) 
+                            
+        else:
+            total_samples = len(ia_signal)
+            for i in range(total_samples):
+                analog_samples.append(AnalogSignalResampled(
+                    sample_id = "{}-{}".format(file.file_id, i),
+                    file_id = file.file_id,
+                    time_signal = np.double(time_signal[i]),
+                    ia_signal = np.double(ia_signal[i]),
+                    ib_signal = np.double(ib_signal[i]),
+                    ic_signal = np.double(ic_signal[i]),
+                    in_signal = np.double(in_signal[i]),
+                    va_signal = np.double(va_signal[i]),
+                    vb_signal = np.double(vb_signal[i]),
+                    vc_signal = np.double(vc_signal[i]),
+                    time_stamp = time_stamp[i],
+                )) 
+                
+        # Save to table
+        AnalogSignalResampled.objects.bulk_create(analog_samples)
+    
+    def getMultipliers(self, file):
+        analogChannelInfo = AnalogChannel.objects.filter(file_id=file.file_id)
+        multipliers = [Decimal(1.0), Decimal(1.0), Decimal(1.0), Decimal(1.0), Decimal(1.0), Decimal(1.0), Decimal(1.0)]
+        
+        for i in range(len(analogChannelInfo)):
+            if analogChannelInfo[i].channel_name == file.ia_channel:
+                if analogChannelInfo[i].unit.lower() == "ka":
+                    multipliers[0] = Decimal(1000.0)
+                    
+            if analogChannelInfo[i].channel_name == file.ib_channel:
+                if analogChannelInfo[i].unit.lower() == "ka":
+                    multipliers[1] = Decimal(1000.0)
+
+            if analogChannelInfo[i].channel_name == file.ic_channel:
+                if analogChannelInfo[i].unit.lower() == "ka":
+                    multipliers[2] = Decimal(1000.0)
+        
+            if analogChannelInfo[i].channel_name == file.in_channel:
+                if analogChannelInfo[i].unit.lower() == "ka":
+                    multipliers[3] = Decimal(1000.0)
+        
+            if analogChannelInfo[i].channel_name == file.va_channel:
+                if analogChannelInfo[i].unit.lower() == "kv":
+                    multipliers[4] = Decimal(1000.0)
+                    
+            if analogChannelInfo[i].channel_name == file.vb_channel:
+                if analogChannelInfo[i].unit.lower() == "kv":
+                    multipliers[5] = Decimal(1000.0)
+            
+            if analogChannelInfo[i].channel_name == file.vc_channel:
+                if analogChannelInfo[i].unit.lower() == "kv":
+                    multipliers[6] = Decimal(1000.0)
+         
+        return  multipliers
+         
+    def resampleDigitalSignals(self, file, fsold, fsnew):     
+        
+        # READ DIGITAL SIGNALS        
+        digital_signals = list(DigitalSignal.objects.filter(file_id=file.file_id).order_by('time_signal'))
+        d1_signal = [item.d1_signal for item in digital_signals]
+        d2_signal = [item.d2_signal for item in digital_signals]
+        d3_signal = [item.d3_signal for item in digital_signals]
+        d4_signal = [item.d4_signal for item in digital_signals]
+        d5_signal = [item.d5_signal for item in digital_signals]
+        d6_signal = [item.d6_signal for item in digital_signals]
+        d7_signal = [item.d7_signal for item in digital_signals]
+        d8_signal = [item.d8_signal for item in digital_signals]
+        d9_signal = [item.d9_signal for item in digital_signals]
+        d10_signal = [item.d10_signal for item in digital_signals]
+        d11_signal = [item.d11_signal for item in digital_signals]
+        d12_signal = [item.d12_signal for item in digital_signals]
+        time_signal = [item.time_signal for item in digital_signals]
+        
+        digital_samples = []
+               
+        # CHECK IF RESAMPLING NEEDS TO BE DONE
+        if fsold < fsnew:
+            # RESAMPLE DIGITAL SIGNALS
+            t_step = time_signal[1] - time_signal[0]
+            resampling = ResampleSignals(fs_new=fsnew, fs_old=fsold, t_step=t_step)
+        
+            new_d1_signal = resampling.resample_by_interpolation(d1_signal)
+            new_d2_signal = resampling.resample_by_interpolation(d2_signal)
+            new_d3_signal = resampling.resample_by_interpolation(d3_signal)
+            new_d4_signal = resampling.resample_by_interpolation(d4_signal)
+            new_d5_signal = resampling.resample_by_interpolation(d5_signal)
+            new_d6_signal = resampling.resample_by_interpolation(d6_signal)
+            new_d7_signal = resampling.resample_by_interpolation(d7_signal)
+            new_d8_signal = resampling.resample_by_interpolation(d8_signal)
+            new_d9_signal = resampling.resample_by_interpolation(d9_signal)
+            new_d10_signal = resampling.resample_by_interpolation(d10_signal)
+            new_d11_signal = resampling.resample_by_interpolation(d11_signal)
+            new_d12_signal = resampling.resample_by_interpolation(d12_signal)
+            
+            new_time_signal = np.linspace(min(time_signal), max(time_signal), len(new_d1_signal))
+            total_samples = len(new_d1_signal)
+                    
+            for i in range(total_samples):
+                digital_samples.append(DigitalSignalResampled(
+                    sample_id = "{}-{}".format(file.file_id, i),
+                    file_id = file.file_id,
+                    time_signal = np.double(new_time_signal[i]),
+                    d1_signal = new_d1_signal[i],
+                    d2_signal = new_d2_signal[i],
+                    d3_signal = new_d3_signal[i],
+                    d4_signal = new_d4_signal[i],
+                    d5_signal = new_d5_signal[i],
+                    d6_signal = new_d6_signal[i],
+                    d7_signal = new_d7_signal[i],
+                    d8_signal = new_d8_signal[i],
+                    d9_signal = new_d9_signal[i],
+                    d10_signal = new_d10_signal[i],
+                    d11_signal = new_d11_signal[i],
+                    d12_signal = new_d12_signal[i],
+                )) 
+                        
+        else:
+            total_samples = len(d1_signal)
+            for i in range(total_samples):
+                digital_samples.append(DigitalSignalResampled(
+                    sample_id = "{}-{}".format(file.file_id, i),
+                    file_id = file.file_id,
+                    time_signal = time_signal[i],
+                    d1_signal = d1_signal[i],
+                    d2_signal = d2_signal[i],
+                    d3_signal = d3_signal[i],
+                    d4_signal = d4_signal[i],
+                    d5_signal = d5_signal[i],
+                    d6_signal = d6_signal[i],
+                    d7_signal = d7_signal[i],
+                    d8_signal = d8_signal[i],
+                    d9_signal = d9_signal[i],
+                    d10_signal = d10_signal[i],
+                    d11_signal = d11_signal[i],
+                    d12_signal = d12_signal[i],
+                )) 
+        # Save to table
+        DigitalSignalResampled.objects.bulk_create(digital_samples)
+    
 class ProjectAndFilesViewSet(APIView):
     
     http_method_names = ['post', 'head', 'options']

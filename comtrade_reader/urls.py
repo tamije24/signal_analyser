@@ -6,11 +6,12 @@ from . import views
 urlpatterns = [
     path('afa-projects-new/',views.ProjectAndFilesViewSet.as_view()),
     path('afa-projects/<afa_id>/', views.ProjectAFAView.as_view()),
-    path('phasors/<int:id>/<int:src>/', views.PhasorView.as_view()),
+    path('phasors/<int:id>/', views.PhasorView.as_view()),
     path('harmonics/<int:id>/<int:start>/<int:end>/<int:src>/', views.HarmonicsView.as_view()),
     path('asignals/<int:id>/<int:src>/', views.AnalogSignalView.as_view()),
     path('dsignals/<int:id>/<int:src>/', views.DigitalSignalView.as_view()),
     path('resample/<int:id>/<int:fsnew>/', views.ResampleView.as_view()),
+    path('resamplephasors/<int:id>/', views.ResamplePhasorView.as_view()),
 ]
 
 router = routers.DefaultRouter()
@@ -47,4 +48,5 @@ urlpatterns += router.urls + projects_router.urls + files_router.urls
 # http://127.0.0.1:8000/comtrade_reader/harmonics/<file_id>/<start_sample>/<end_sample>/
 # http://127.0.0.1:8000/comtrade_reader/asignals/<file_id>/
 # http://127.0.0.1:8000/comtrade_reader/dsignals/<file_id>/
-# http://127.0.0.1:8000/comtrade_reader/resample/<file_id>/<new_sampling_rate>/<old_sampling_rate>/
+# http://127.0.0.1:8000/comtrade_reader/resample/<project_id>/<new_sampling_rate>/
+# http://127.0.0.1:8000/comtrade_reader/resamplephasors/<project_id>/
