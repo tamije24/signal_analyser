@@ -1198,12 +1198,6 @@ class _AsciiDatReader(_DatReader):
         primary = [x.primary for x in self._cfg.analog_channels]
         secondary = [x.secondary for x in self._cfg.analog_channels]
         
-        if primary == 0:
-            primary = 1
-        
-        if secondary == 0:
-            secondary = 1    
-        
         # extract lines
         if type(contents) is str:
             lines = contents.splitlines()
@@ -1232,6 +1226,12 @@ class _AsciiDatReader(_DatReader):
                 if pors[i].lower() == "p":
                     self.analog[i][line_number - 1] = avalues[i]
                 else:
+                    if primary[i] == 0:
+                        primary[i] = 1
+        
+                    if secondary[i] == 0:
+                        secondary[i] = 1    
+                        
                     self.analog[i][line_number - 1] = avalues[i] * (primary[i]/secondary[i])    
                     
             for i in range(status_count):
