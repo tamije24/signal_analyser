@@ -1,8 +1,8 @@
 from .common import *
 
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['10.250.53.47']
 
 ALLOWED_HOSTS = ['10.250.53.47']
 
