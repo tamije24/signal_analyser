@@ -217,9 +217,9 @@ AUTH_LDAP_SERVER_URI = "ldap://tnb.my:389"
 AUTH_LDAP_BIND_DN = "tnb\\admin.afa"
 AUTH_LDAP_BIND_PASSWORD = "wAKJXqEq7bs%4j"
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    "dc=tnb,dc=my",  # Base DN
-    ldap.SCOPE_SUBTREE,  # Scope of the search
-    "(objectClass=person)"  # Filter to look for entries with objectClass=person
+    "dc=tnb,dc=my",  # Base DN for user search, make sure this is correct
+    ldap.SCOPE_ONELEVEL,  # Limit the search scope to one level if possible
+    "(sAMAccountName=%(user)s)"  # Ensure sAMAccountName is used correctly
 )
 
 AUTH_LDAP_CONNECTION_OPTIONS = {
