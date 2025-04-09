@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import ldap
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 from pathlib import Path
 from datetime import timedelta
 
@@ -205,3 +207,29 @@ LOGGING = {
 
 # SEVERITY OF LOG MESSAGES
 # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+
+AUTH_LDAP_SERVER_URI = "ldap://tnb.my:389"
+AUTH_LDAP_BIND_DN = "tnb\\admin.afa"
+AUTH_LDAP_BIND_PASSWORD = "wAKJXqEq7bs%4j"
+AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    "dc=tnb,dc=my",  # Base DN
+    ldap.SCOPE_SUBTREE,  # Scope of the search
+    "(objectClass=person)"  # Filter to look for entries with objectClass=person
+)
+
+AUTH_LDAP_CONNECTION_OPTIONS = {
+    ldap.OPT_NETWORK_TIMEOUT: 5,
+}
+
+AUTHENTICATION_BACKENDS = [
+    'django_auth_ldap.backend.LDAPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Optional - Sync LDAP user data into Django user model
+AUTH_LDAP_ALWAYS_UPDATE_USER = True
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+}

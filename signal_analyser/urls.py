@@ -19,6 +19,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from debug_toolbar.toolbar import debug_toolbar_urls
+from .views import HybridLoginView,UserProfileView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 admin.site.site_header = 'Signal Analyser Admin'
 admin.site.index_title = 'Administrator'
@@ -27,8 +29,11 @@ urlpatterns = [
     path('', include('core.urls')),
     path("admin/", admin.site.urls),
     path('comtrade_reader/', include('comtrade_reader.urls')),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    # path('auth/', include('djoser.urls')),
+    # path('auth/', include('djoser.urls.jwt')),
+    path("auth/jwt/create", HybridLoginView.as_view(), name="token_obtain_pair"),
+    path("auth/jwt/refresh", TokenRefreshView.as_view(), name="token_refresh"),
+    path('auth/users/me/', UserProfileView.as_view(), name='user_profile'),
 ] + debug_toolbar_urls() 
 
 if settings.DEBUG:
