@@ -7,3 +7,4 @@ db.sqlite3
 media
 staticfiles
 static
+signal_analyser/settings/dev.py
