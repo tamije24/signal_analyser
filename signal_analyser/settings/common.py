@@ -54,22 +54,26 @@ MIDDLEWARE = [
 ]
 
 INTERNAL_IPS = [
-    # ...
     "127.0.0.1",
-    # ...
+    "10.250.53.47",
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5500',
-    'http://localhost:4173',
-    'https://viewer-neon-alpha.vercel.app'
+    'http://localhost:8000',
+    'http://10.250.53.47:9001',
+    'http://10.250.53.47:8000',
+    'http://10.250.53.47'
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://viewer-neon-alpha.vercel.app'
+    'http://localhost:8000',
+    'http://10.250.53.47:9001',
+    'http://10.250.53.47:8000',
+    'http://10.250.53.47'
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
 
 ROOT_URLCONF = "signal_analyser.urls"
 
