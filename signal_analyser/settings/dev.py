@@ -1,8 +1,6 @@
 from .common import *
 
-DEBUG = False
-
-ALLOWED_HOSTS = ['*']
+DEBUG = True
 
 SECRET_KEY = "django-insecure-*ak%y3zg-z^qq^%rk@zgtqg2q)#2+hz^4tn1(tvske)xcq3b$n"
 
@@ -12,6 +10,6 @@ DATABASES = {
         "NAME": 'signal_analyser',
         "HOST": 'localhost',
         "USER": 'root',
-        "PASSWORD": 'admin123'
+        "PASSWORD": 'mYsqL@2024'
     }
 }
