@@ -216,13 +216,15 @@ LOGGING = {
 AUTH_LDAP_SERVER_URI = "ldap://tnb.my:389"
 AUTH_LDAP_BIND_DN = "tnb\\admin.afa"
 AUTH_LDAP_BIND_PASSWORD = "wAKJXqEq7bs%4j"
+
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    "dc=tnb,dc=my",  # Base DN for user search, make sure this is correct
-    ldap.SCOPE_ONELEVEL,  # Limit the search scope to one level if possible
-    "(sAMAccountName=%(user)s)"  # Ensure sAMAccountName is used correctly
+    "dc=tnb,dc=my",
+    ldap.SCOPE_SUBTREE,
+    "(sAMAccountName=%(user)s)"
 )
 
 AUTH_LDAP_CONNECTION_OPTIONS = {
+    ldap.OPT_REFERRALS: 0,
     ldap.OPT_NETWORK_TIMEOUT: 5,
 }
 
@@ -236,4 +238,6 @@ AUTH_LDAP_ALWAYS_UPDATE_USER = True
 AUTH_LDAP_USER_ATTR_MAP = {
     "first_name": "givenName",
     "last_name": "sn",
+    "email": "mail",
 }
+
